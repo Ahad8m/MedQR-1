@@ -1,0 +1,404 @@
+import streamlit as st
+import qrcode
+from io import BytesIO
+import base64
+from datetime import datetime
+import json
+
+# Page configuration
+st.set_page_config(
+    page_title="MedQR – Medication QR Code Platform",
+    page_icon="💊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# Custom CSS
+st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', sans-serif;
+    }
+
+    .main-header {
+        font-size: 2.4rem;
+        font-weight: 700;
+        color: #1a3c6e;
+        text-align: center;
+        padding: 1.5rem 2rem;
+        background: linear-gradient(135deg, #eaf4fb 0%, #d0e8f5 100%);
+        border-radius: 14px;
+        margin-bottom: 2rem;
+        border: 1px solid #b8d8ef;
+        letter-spacing: -0.5px;
+    }
+
+    .sub-header {
+        font-size: 1.3rem;
+        color: #1a3c6e;
+        font-weight: 600;
+        margin-top: 1.2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-box {
+        padding: 1.1rem 1.3rem;
+        border-radius: 10px;
+        background-color: #f4faff;
+        border-left: 5px solid #1a7abf;
+        margin: 0.8rem 0;
+        font-size: 0.95rem;
+        color: #2c3e50;
+    }
+
+    .success-box {
+        padding: 1rem 1.3rem;
+        border-radius: 10px;
+        background-color: #eafaf1;
+        border-left: 5px solid #27ae60;
+        margin: 1rem 0;
+        font-size: 0.95rem;
+        color: #1e7d45;
+    }
+
+    .team-card {
+        padding: 0.85rem 1.2rem;
+        border-radius: 10px;
+        background: #f8fbff;
+        border: 1px solid #d0e6f5;
+        margin-bottom: 0.6rem;
+        font-size: 0.9rem;
+        color: #2c3e50;
+    }
+
+    .supervisor-card {
+        padding: 1rem 1.4rem;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #eaf0ff 0%, #ddeeff 100%);
+        border: 1px solid #a8c4e8;
+        margin-bottom: 1rem;
+        font-size: 0.95rem;
+        color: #1a3c6e;
+        font-weight: 500;
+    }
+
+    .stButton>button {
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        padding: 0.5rem 1.2rem;
+    }
+
+    .stTextInput>div>input, .stTextArea>div>textarea {
+        border-radius: 8px;
+        font-size: 0.93rem;
+    }
+
+    footer {visibility: hidden;}
+
+    .footer-custom {
+        text-align: center;
+        color: #7f8c8d;
+        font-size: 0.82rem;
+        padding: 1rem;
+        margin-top: 2rem;
+        border-top: 1px solid #e8eef3;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# ── Helper Functions ─────────────────────────────────────────────────────────
+
+def generate_qr_code(data: str) -> BytesIO:
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="#1a3c6e", back_color="white")
+    buf = BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    return buf
+
+
+def get_download_link(buf: BytesIO, filename: str) -> str:
+    b64 = base64.b64encode(buf.getvalue()).decode()
+    return (
+        f'<a href="data:image/png;base64,{b64}" download="{filename}" '
+        f'style="display:inline-block;padding:0.45rem 1rem;background:#1a7abf;color:white;'
+        f'border-radius:8px;text-decoration:none;font-weight:600;font-size:0.9rem;">'
+        f'📥 Download QR Code</a>'
+    )
+
+# ── Sidebar ───────────────────────────────────────────────────────────────────
+
+with st.sidebar:
+    st.markdown("## 💊 MedQR Platform")
+    st.markdown("---")
+
+    page = st.radio(
+        "Navigate",
+        [
+            "🏠 Home",
+            "🔗 QR Code Generator",
+            "ℹ️ About & Team",
+        ],
+        label_visibility="collapsed"
+    )
+
+    st.markdown("---")
+    st.markdown("""
+    <div style='font-size:0.82rem;color:#7f8c8d;line-height:1.6;'>
+    <b>MedQR</b> replaces traditional paper medication leaflets with scannable QR codes that give patients instant, clear access to their medication instructions.
+    </div>
+    """, unsafe_allow_html=True)
+
+# ── Page: Home ────────────────────────────────────────────────────────────────
+
+if page == "🏠 Home":
+    st.markdown('<div class="main-header">💊 MedQR – Medication QR Code Platform</div>', unsafe_allow_html=True)
+
+    st.markdown("""
+    <div class="info-box">
+    Welcome to <b>MedQR</b> — a smart platform that converts medication use instructions into scannable QR codes,
+    giving patients instant, paperless access to accurate guidance on how to take their prescribed medications.
+    </div>
+    """, unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.markdown("""
+        <div class="info-box">
+            <b>🔗 Instant Access</b><br><br>
+            Patients scan one QR code and immediately see clear medication instructions — no leaflets, no confusion.
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown("""
+        <div class="info-box">
+            <b>📋 Complete Instructions</b><br><br>
+            Each QR code encodes dosage, frequency, route of administration, warnings, and storage information.
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col3:
+        st.markdown("""
+        <div class="info-box">
+            <b>🎨 Easy Generation</b><br><br>
+            Fill in medication details and generate a print-ready QR code in seconds — ready for labels or packaging.
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.subheader("How It Works")
+
+    steps = {
+        "Step": ["1️⃣ Enter Medication Details", "2️⃣ Generate QR Code", "3️⃣ Print or Attach", "4️⃣ Patient Scans"],
+        "Description": [
+            "Fill in the medication name, dosage, frequency, route, warnings, and storage instructions.",
+            "Click 'Generate QR Code' — the platform instantly creates a scannable code.",
+            "Download the QR code image and attach it to the medication packaging or label.",
+            "The patient scans the code with any smartphone camera and sees the full instructions instantly."
+        ]
+    }
+
+    import pandas as pd
+    df_steps = pd.DataFrame(steps)
+    st.dataframe(df_steps, use_container_width=True, hide_index=True)
+
+# ── Page: QR Code Generator ───────────────────────────────────────────────────
+
+elif page == "🔗 QR Code Generator":
+    st.markdown('<div class="main-header">🔗 Medication QR Code Generator</div>', unsafe_allow_html=True)
+
+    col_form, col_preview = st.columns([1.1, 0.9])
+
+    with col_form:
+        st.subheader("Medication Details")
+
+        med_name = st.text_input("💊 Medication Name *", placeholder="e.g., Amoxicillin")
+        dosage = st.text_input("📏 Dose & Strength *", placeholder="e.g., 500 mg")
+        frequency = st.text_input("⏰ Frequency *", placeholder="e.g., Three times daily (every 8 hours)")
+        route = st.selectbox("🛤️ Route of Administration *",
+                             ["Oral", "Topical", "Inhalation", "Intravenous", "Intramuscular",
+                              "Subcutaneous", "Sublingual", "Rectal", "Nasal", "Ophthalmic", "Other"])
+
+        st.markdown("---")
+        st.subheader("Additional Instructions")
+
+        food_interaction = st.selectbox("🍽️ Food Interaction",
+                                        ["No specific requirement",
+                                         "Take with food or milk",
+                                         "Take on an empty stomach",
+                                         "Avoid grapefruit / grapefruit juice",
+                                         "Other (see notes below)"])
+
+        duration = st.text_input("📅 Duration of Treatment", placeholder="e.g., 7 days, Until finished, Ongoing")
+
+        special_instructions = st.text_area("📝 Special Instructions",
+                                             placeholder="e.g., Swallow whole — do not crush or chew. Complete the full course even if you feel better.",
+                                             height=90)
+
+        warnings = st.text_area("⚠️ Warnings & Side Effects",
+                                 placeholder="e.g., May cause drowsiness — avoid driving. Do not take with alcohol.",
+                                 height=90)
+
+        storage = st.text_input("🌡️ Storage Instructions",
+                                 placeholder="e.g., Store below 25 °C, away from light and moisture.")
+
+        missed_dose = st.text_area("⏭️ Missed Dose Instructions",
+                                    placeholder="e.g., Take as soon as you remember. If it is almost time for the next dose, skip the missed dose.",
+                                    height=70)
+
+        with st.expander("⚙️ Optional: Add Reference URL"):
+            custom_url = st.text_input("Information URL", placeholder="https://your-hospital.com/med-info")
+
+        generate_btn = st.button("🎨 Generate QR Code", type="primary", use_container_width=True)
+
+    with col_preview:
+        st.subheader("QR Code Preview")
+
+        if generate_btn:
+            if not (med_name and dosage and frequency):
+                st.error("Please fill in Medication Name, Dose & Strength, and Frequency before generating.")
+            else:
+                qr_payload = {
+                    "medication": med_name,
+                    "dose": dosage,
+                    "frequency": frequency,
+                    "route": route,
+                    "food": food_interaction,
+                }
+                if duration:
+                    qr_payload["duration"] = duration
+                if special_instructions:
+                    qr_payload["instructions"] = special_instructions
+                if warnings:
+                    qr_payload["warnings"] = warnings
+                if storage:
+                    qr_payload["storage"] = storage
+                if missed_dose:
+                    qr_payload["missed_dose"] = missed_dose
+                if custom_url:
+                    qr_payload["url"] = custom_url
+
+                qr_payload["generated"] = datetime.now().strftime("%Y-%m-%d %H:%M")
+                qr_payload["platform"] = "MedQR"
+
+                qr_text = json.dumps(qr_payload, ensure_ascii=False, indent=2)
+                qr_buf = generate_qr_code(qr_text)
+
+                st.image(qr_buf, caption=f"QR Code — {med_name} {dosage}", use_container_width=True)
+
+                st.markdown(get_download_link(qr_buf, f"{med_name.replace(' ','_')}_{dosage}_QR.png"),
+                            unsafe_allow_html=True)
+
+                st.markdown("""
+                <div class="success-box">
+                ✅ QR Code generated! Download and attach it to the medication label or packaging.
+                The patient can scan it with any smartphone camera to view full instructions.
+                </div>
+                """, unsafe_allow_html=True)
+
+                with st.expander("📄 View Encoded Data"):
+                    st.json(qr_payload)
+        else:
+            st.markdown("""
+            <div style="height:320px;display:flex;align-items:center;justify-content:center;
+            background:#f4faff;border-radius:12px;border:2px dashed #b8d8ef;color:#7f8c8d;
+            font-size:1rem;text-align:center;padding:2rem;">
+            Fill in the medication details on the left<br>and click <b>Generate QR Code</b>.
+            </div>
+            """, unsafe_allow_html=True)
+
+# ── Page: About & Team ────────────────────────────────────────────────────────
+
+elif page == "ℹ️ About & Team":
+    st.markdown('<div class="main-header">ℹ️ About MedQR & Research Team</div>', unsafe_allow_html=True)
+
+    st.markdown("""
+    ## About the Project
+
+    **MedQR** is a research-driven platform developed as part of a PharmD capstone project focused on
+    modernizing patient medication education. The platform replaces traditional printed medication leaflets
+    with smart QR codes that patients can scan to instantly access clear, structured medication use instructions.
+
+    ---
+
+    ### 🎯 Research Objectives
+
+    - Evaluate the effectiveness of QR-code-based delivery of medication instructions compared to traditional paper leaflets
+    - Assess the impact of digital medication education on patient adherence and understanding
+    - Analyze patient satisfaction and preferences regarding digital versus print information tools
+    - Identify potential barriers to QR code adoption in pharmacy and hospital settings
+
+    ---
+    """)
+
+    st.subheader("👩‍🎓 Research Team")
+
+    students = [
+        "Rand Alsaeed",
+        "Rand Alfallay",
+        "Sara Alofan",
+        "Ghala Alsaeed",
+        "Refan Alturki",
+    ]
+
+    for name in students:
+        st.markdown(f"""
+        <div class="team-card">
+        👩‍🔬 <b>{name}</b> &nbsp;·&nbsp; <span style="color:#5d7a9e;">PharmD Student</span>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("---")
+    st.subheader("🎓 Project Supervisor")
+
+    st.markdown("""
+    <div class="supervisor-card">
+    🏅 <b>Dr. Ali Alsuhibani</b> &nbsp;·&nbsp; PharmD, PhD<br>
+    <span style="color:#4a6fa5;font-weight:400;font-size:0.9rem;">Faculty Supervisor</span>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown("---")
+
+    st.markdown("""
+    ### 🛠️ Technology
+
+    | Component | Technology |
+    |---|---|
+    | Frontend | Streamlit (Python) |
+    | QR Generation | python-qrcode |
+    | Data Encoding | JSON |
+
+    ---
+
+    ### 📦 Installation
+
+    ```bash
+    pip install streamlit qrcode pillow pandas
+    streamlit run app.py
+    ```
+
+    ---
+
+    ### 📄 Ethics & Privacy
+
+    This platform is developed for educational and research purposes. No patient-identifiable information
+    is stored or transmitted. All data handling complies with applicable healthcare privacy regulations
+    and institutional review board (IRB) guidelines.
+    """)
+
+# ── Footer ────────────────────────────────────────────────────────────────────
+
+st.markdown("""
+<div class="footer-custom">
+    💊 MedQR &nbsp;|&nbsp; Smart Medication QR Code Platform &nbsp;|&nbsp;
+    Supervised by <b>Dr. Ali Alsuhibani, PharmD, PhD</b>
+</div>
+""", unsafe_allow_html=True)
